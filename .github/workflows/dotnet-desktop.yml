@@ -70,6 +70,6 @@ jobs:
 
     # Restore the application to populate the obj folder with RuntimeIdentifiers
     - name: Restore the application
-      run: msbuild src/FlowBlot.sln /t:Restore /p:Configuration=Release
+      run: msbuild src/FlowBlot.sln /t:Rebuild /p:Configuration=Release
 
 
