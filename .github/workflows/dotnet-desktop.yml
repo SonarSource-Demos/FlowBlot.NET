@@ -42,7 +42,7 @@ on:
   push:
     branches: [ "master" ]
   pull_request:
-    branches: [ "master" ]
+    types: [opened, synchronize, reopened]
 
 jobs:
   build:
@@ -52,24 +52,50 @@ jobs:
       Solution_Name: FlowBlot
 
     steps:
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin' # See https://github.com/actions/setup-java?tab=readme-ov-file#supported-distributions for available options
+
     - name: Checkout
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
-    # Install the .NET Core workload
-    # - name: Install .NET Core
-    #  uses: actions/setup-dotnet@v3
-    #  with:
-    #    dotnet-version: 6.0.x
+    - name: Restore SonarQube packages cache
+        uses: actions/cache@v4
+        id: sonar-cache
+        with:
+          path: ~\.sonar\cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+    - name: Restore SonarQube scanner cache
+        id: sonar-scanner
+        uses: actions/cache@v4
+        with:
+          path: .\.sonar\scanner
+          key: ${{ runner.os }}-sonar-scanner
+
+    - name: Install SonarQube scanner
+        if: steps.sonar-scanner.outputs.cache-hit != 'true'
+        shell: powershell
+        run: |
+          New-Item -Path .\.sonar\scanner -ItemType Directory
+          dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
+    
 
     # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v2
 
 
-    # Restore the application to populate the obj folder with RuntimeIdentifiers
+    # Build and analyze the application 
     - name: Restore the application
-      run: msbuild src/FlowBlot.sln /t:Rebuild /p:Configuration=Release
+      run: |
+       .\.sonar\scanner\dotnet-sonarscanner begin /k:flowblot.net /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="${{ secrets.SONAR_HOST_URL }}"
+        msbuild src/FlowBlot.sln /t:Rebuild /p:Configuration=Release
+        .\.sonar\scanner\dotnet-sonarscanner end
 
 
