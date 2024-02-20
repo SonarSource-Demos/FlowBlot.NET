@@ -94,4 +94,4 @@ jobs:
       run: |
         .\.sonar\scanner\dotnet-sonarscanner begin /k:flowblot.net /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="${{ secrets.SONAR_HOST_URL }}"
         msbuild src/FlowBlot.sln /t:Rebuild /p:Configuration=Release
-        .\.sonar\scanner\dotnet-sonarscanner end
+        .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
